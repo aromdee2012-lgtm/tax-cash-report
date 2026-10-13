@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงานเงินสดรับ-จ่าย (สำหรับสรรพากร)</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --success-color: #27ae60;
+            --border-color: #333;
+        }
+        body {
+            font-family: 'Sarabun', 'Tahoma', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 15px;
+            color: #000;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h2, h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        .card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .form-group input, .form-group select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .action-bar {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn {
+            padding: 9px 18px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #fff;
+            font-family: inherit;
+        }
+        .btn-add { background-color: var(--success-color); }
+        .btn-add:hover { background-color: #219653; }
+        .btn-print { background-color: #2980b9; }
+        .btn-print:hover { background-color: #1f618d; }
+        .btn-clear { background-color: #c0392b; }
+        .btn-clear:hover { background-color: #962d22; }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 25px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 900px;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 5px 4px;
+            text-align: center;
+        }
+        th {
+            background-color: #eaeded;
+            font-weight: bold;
+        }
+        input.table-input {
+            width: 98%;
+            border: 1px solid transparent;
+            background: transparent;
+            text-align: right;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 4px 2px;
+            box-sizing: border-box;
+        }
+        input.table-input:hover {
+            border: 1px dashed #aaa;
+            background: #fff;
+        }
+        input.table-input:focus {
+            outline: 2px solid #3498db;
+            background: #fff;
+        }
+        input.table-text {
+            width: 98%;
+            border: 1px solid transparent;
+            background: transparent;
+            text-align: left;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 4px 2px;
+            box-sizing: border-box;
+        }
+        input.table-text:hover {
+            border: 1px dashed #aaa;
+            background: #fff;
+        }
+        input.table-text:focus {
+            outline: 2px solid #3498db;
+            background: #fff;
+        }
+        input.table-day {
+            text-align: center;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f2f4f4;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 8mm 10mm 8mm 10mm;
+        }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+                margin: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+                margin: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            table {
+                font-size: 11px;
+                min-width: 100%;
+            }
+            th, td {
+                padding: 4px 2px;
+            }
+            input.table-input, input.table-text {
+                border: none !important;
+                background: transparent !important;
+            }
+            .print-header {
+                display: block !important;
+                margin-bottom: 10px;
+            }
+        }
+        .print-header {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="no-print" style="text-align: center;">รายงานเงินสดรับ - จ่าย (สำหรับสรรพากร)</h2>
+
+    <!-- หัวกระดาษสำหรับพิมพ์ -->
+    <div class="print-header">
+        <h3 id="print-title-date" style="text-align: center; margin: 0 0 8px 0;">รายงานเงินสดรับ - จ่าย ประจำวันที่...</h3>
+        <div style="font-size: 13px; margin-bottom: 6px; border-bottom: 1px solid #000; padding-bottom: 6px;">
+            <div><strong>ชื่อผู้ประกอบการ:</strong> <span id="p-owner">-</span></div>
+        </div>
+        <p style="font-size: 13px; margin: 4px 0;">
+            <strong>เลขประจำตัวประชาชน/ผู้เสียภาษี:</strong> <span id="p-taxid">-</span>
+        </p>
+        <p style="font-size: 13px; margin: 4px 0;">
+            <strong>ชื่อสถานประกอบการ:</strong> <span id="p-shop">-</span>
+        </p>
+    </div>
+
+    <!-- ส่วนตั้งค่าข้อมูลร้านค้า -->
+    <div class="card no-print">
+        <details open>
+            <summary style="font-weight: bold; cursor: pointer; color: var(--primary-color);">⚙️ ตั้งค่าข้อมูลผู้ประกอบการ (กรอกครั้งเดียว บันทึกปลอดภัยเฉพาะในเครื่องนี้เท่านั้น)</summary>
+            <div class="form-grid" style="margin-top: 12px;">
+                <div class="form-group">
+                    <label>ชื่อผู้ประกอบการ:</label>
+                    <input type="text" id="ownerName" placeholder="เช่น แจ่ม อารมณ์ดี" onchange="saveData()">
+                </div>
+                <div class="form-group">
+                    <label>เลขประจำตัวผู้เสียภาษี / บัตรประชาชน:</label>
+                    <input type="text" id="taxId" placeholder="เลข 13 หลัก" onchange="saveData()">
+                </div>
+                <div class="form-group">
+                    <label>ชื่อสถานประกอบการ:</label>
+                    <input type="text" id="shopName" placeholder="เช่น ร้านค้า/กิจการส่วนตัว" onchange="saveData()">
+                </div>
+                <div class="form-group" style="display: flex; flex-direction: row; gap: 8px;">
+                    <div style="flex: 2;">
+                        <label>เดือน:</label>
+                        <select id="reportMonth" onchange="saveData()">
+                            <option value="มกราคม">มกราคม</option><option value="กุมภาพันธ์">กุมภาพันธ์</option>
+                            <option value="มีนาคม">มีนาคม</option><option value="เมษายน">เมษายน</option>
+                            <option value="พฤษภาคม">พฤษภาคม</option><option value="มิถุนายน">มิถุนายน</option>
+                            <option value="กรกฎาคม">กรกฎาคม</option><option value="สิงหาคม">สิงหาคม</option><option value="กันยายน">กันยายน</option><option value="ตุลาคม">ตุลาคม</option><option value="พฤศจิกายน">พฤศจิกายน</option><option value="ธันวาคม">ธันวาคม</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>พ.ศ.:</label>
+                        <input type="text" id="reportYear" value="2569" onchange="saveData()">
+                    </div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- ส่วนบันทึกรายการรายวัน (ขายไป กดบันทึกไป) -->
+    <div class="card no-print" style="border-left: 5px solid var(--success-color);">
+        <h3 style="color: var(--success-color);">🛒 บันทึกรายการรายวัน (ขายปุ๊บ บันทึกปั๊บ ระบบจะบันทึกลงตารางหลักและประวัติให้เอง)</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>วันที่ (1-31):</label>
+                <input type="number" id="quick_day" min="1" max="31" value="1">
+            </div>
+            <div class="form-group">
+                <label>ประเภทรายการ:</label>
+                <select id="quick_type">
+                    <option value="cash">รับเงินสด (สินค้าทั่วไป)</option>
+                    <option value="transfer">รับโอน/สแกน (สินค้าทั่วไป)</option>
+                    <option value="cash_except">รับเงินสด (สินค้ายกเว้น)</option>
+                    <option value="transfer_except">รับโอน/สแกน (สินค้ายกเว้น)</option>
+                    <option value="buy">จ่ายซื้อสินค้า/วัตถุดิบ</option>
+                    <option value="expense">จ่ายค่าใช้จ่ายอื่นๆ</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>จำนวนเงิน (บาท):</label>
+                <input type="number" id="quick_amount" placeholder="0.00" step="any" style="font-weight: bold; font-size: 16px;">
+            </div>
+            <div class="form-group">
+                <label>รายละเอียด (ถ้ามี):</label>
+                <input type="text" id="quick_desc" placeholder="เช่น ขายงานไม้ / ข้าวสาร">
+            </div>
+            <div>
+                <button class="btn btn-add" style="width: 100%; padding: 10px;" onclick="addQuickRecord()">➕ บันทึกเข้าระบบ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- แถบปุ่มจัดการตาราง -->
+    <div class="action-bar no-print">
+        <div>
+            <button class="btn btn-add" onclick="addRows(10)">➕ เพิ่มช่องตารางอีก 10 แถว</button>
+            <span style="font-size: 13px; color: #666; margin-left: 10px;">(มีทั้งหมด <span id="rowCountDisplay">25</span> แถว)</span>
+        </div>
+        <div>
+            <button class="btn btn-print" onclick="printReport()">🖨️ พิมพ์รายงานสรรพากร / PDF</button>
+            <button class="btn btn-clear" onclick="clearData()">🗑️ ล้างข้อมูลทั้งหมด</button>
+        </div>
+    </div>
+
+    <!-- ตารางบันทึกหลัก (แก้ไขได้) -->
+    <div class="table-wrapper">
+        <h3 class="no-print" style="font-size: 15px; margin-bottom: 8px;">📋 ตารางสรุปรายงานสรรพากร</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width: 50px;">วันที่</th>
+                    <th rowspan="2">รายการ</th>
+                    <th colspan="2">รายรับ (บาท)</th>
+                    <th rowspan="2" style="width: 90px;">รวมทั้งหมด<br>(รายรับ)</th>
+                    <th rowspan="2">ขายสินค้าทั่วไป</th>
+                    <th rowspan="2">สินค้ายกเว้น</th>
+                    <th colspan="2">รายจ่าย (บาท)</th>
+                </tr>
+                <tr>
+                    <th style="width: 85px;">เงินสด</th>
+                    <th style="width: 85px;">โอน/สแกน</th>
+                    <th style="width: 85px;">ซื้อสินค้า</th>
+                    <th style="width: 85px;">ค่าใช้จ่ายอื่นๆ</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- JavaScript สร้างแถว -->
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="2" style="text-align: center;">รวมทั้งสิ้น</td>
+                    <td><span id="sum-cash">0.00</span></td>
+                    <td><span id="sum-transfer">0.00</span></td>
+                    <td><span id="sum-total-income">0.00</span></td>
+                    <td><span id="sum-general">0.00</span></td>
+                    <td><span id="sum-except">0.00</span></td>
+                    <td><span id="sum-buy">0.00</span></td>
+                    <td><span id="sum-expense">0.00</span></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- ส่วนตารางประวัติรายการรายวัน (สำหรับพิมพ์เก็บสะสมรายวัน) -->
+    <div class="card" style="margin-top: 30px; border-top: 5px solid var(--primary-color);">
+        <div class="action-bar" style="margin-bottom: 10px;">
+            <h3 style="margin: 0; color: var(--primary-color);">📜 บันทึกประวัติรายการรายวัน (สำหรับพิมพ์เก็บสะสมเป็นหลักฐาน)</h3>
+            <button class="btn btn-print no-print" onclick="printLogReport()">🖨️ พิมพ์ประวัติรายวันทั้งหมด</button>
+        </div>
+        <div class="table-wrapper" style="margin-bottom: 0;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">วันที่</th>
+                        <th style="width: 150px;">ประเภทรายการ</th>
+                        <th>รายละเอียด</th>
+                        <th style="width: 120px;">จำนวนเงิน (บาท)</th>
+                        <th class="no-print" style="width: 60px;">ลบ</th>
+                    </tr>
+                </thead>
+                <tbody id="log-table-body">
+                    <tr><td colspan="5" style="text-align: center; color: #777;">ยังไม่มีรายการบันทึก</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let totalRows = 25; 
+    let historyLogs = []; 
+
+    function createRow(i) {
+        let tr = document.createElement('tr');
+        tr.id = `row_${i}`;
+        tr.innerHTML = `
+            <td><input type="text" class="table-text table-day" id="day_${i}" oninput="onInputData()" placeholder="${i <= 31 ? i : ''}"></td>
+            <td><input type="text" class="table-text" id="desc_${i}" oninput="onInputData()"></td>
+            <td><input type="number" class="table-input" id="cash_${i}" oninput="onInputData()" min="0" step="any"></td>
+            <td><input type="number" class="table-input" id="transfer_${i}" oninput="onInputData()" min="0" step="any"></td>
+            <td><span id="row_total_${i}">0.00</span></td>
+            <td><input type="number" class="table-input" id="general_${i}" oninput="onInputData()" min="0" step="any"></td>
+            <td><input type="number" class="table-input" id="except_${i}" oninput="onInputData()" min="0" step="any"></td>
+            <td><input type="number" class="table-input" id="buy_${i}" oninput="onInputData()" min="0" step="any"></td>
+            <td><input type="number" class="table-input" id="expense_${i}" oninput="onInputData()" min="0" step="any"></td>
+        `;
+        return tr;
+    }
+
+    function renderTable(count) {
+        const tbody = document.getElementById('table-body');
+        for (let i = 1; i <= count; i++) {
+            if (!document.getElementById(`row_${i}`)) {
+                tbody.appendChild(createRow(i));
+            }
+        }
+        document.getElementById('rowCountDisplay').innerText = count;
+    }
+
+    function addRows(num) {
+        totalRows += num;
+        renderTable(totalRows);
+        saveData();
+    }
+
+    function addQuickRecord() {
+        let day = document.getElementById('quick_day').value;
+        let type = document.getElementById('quick_type').value;
+        let amount = parseFloat(document.getElementById('quick_amount').value);
+        let desc = document.getElementById('quick_desc').value.trim();
+
+        if (!amount || amount <= 0) {
+            return; 
+        }
+
+        let targetRow = 0;
+        for (let i = 1; i <= totalRows; i++) {
+            let dVal = document.getElementById(`day_${i}`).value;
+            let descVal = document.getElementById(`desc_${i}`).value;
+            if (!dVal || (dVal == day && !descVal)) {
+                targetRow = i;
+                break;
+            }
+        }
+
+        if (targetRow === 0) {
+            addRows(10);
+            targetRow = totalRows - 9;
+        }
+
+        document.getElementById(`day_${targetRow}`).value = day;
+        let defaultDesc = '';
+        if (type === 'cash') defaultDesc = 'รับเงินสด (สินค้าทั่วไป)';
+        else if (type === 'transfer') defaultDesc = 'รับโอน/สแกน (สินค้าทั่วไป)';
+        else if (type === 'cash_except') defaultDesc = 'รับเงินสด (สินค้ายกเว้น)';
+        else if (type === 'transfer_except') defaultDesc = 'รับโอน/สแกน (สินค้ายกเว้น)';
+        else if (type === 'buy') defaultDesc = 'จ่ายซื้อสินค้า/วัตถุดิบ';
+        else if (type === 'expense') defaultDesc = 'จ่ายค่าใช้จ่ายอื่นๆ';
+
+        if (desc) {
+            document.getElementById(`desc_${targetRow}`).value = desc;
+        } else if (!document.getElementById(`desc_${targetRow}`).value) {
+            document.getElementById(`desc_${targetRow}`).value = defaultDesc;
+        }
+
+        if (type === 'cash' || type === 'cash_except') {
+            let cur = parseFloat(document.getElementById(`cash_${targetRow}`).value) || 0;
+            document.getElementById(`cash_${targetRow}`).value = cur + amount;
+        } else if (type === 'transfer' || type === 'transfer_except') {
+            let cur = parseFloat(document.getElementById(`transfer_${targetRow}`).value) || 0;
+            document.getElementById(`transfer_${targetRow}`).value = cur + amount;
+        } else if (type === 'buy') {
+            let cur = parseFloat(document.getElementById(`buy_${targetRow}`).value) || 0;
+            document.getElementById(`buy_${targetRow}`).value = cur + amount;
+        } else if (type === 'expense') {
+            let cur = parseFloat(document.getElementById(`expense_${targetRow}`).value) || 0;
+            document.getElementById(`expense_${targetRow}`).value = cur + amount;
+        }
+
+        if (type === 'cash' || type === 'transfer') {
+            let genField = document.getElementById(`general_${targetRow}`);
+            genField.value = (parseFloat(genField.value) || 0) + amount;
+        } else if (type === 'cash_except' || type === 'transfer_except') {
+            let excField = document.getElementById(`except_${targetRow}`);
+            excField.value = (parseFloat(excField.value) || 0) + amount;
+        }
+
+        historyLogs.push({
+            id: Date.now(),
+            day: day,
+            typeName: defaultDesc,
+            desc: desc || defaultDesc,
+            amount: amount
+        });
+
+        document.getElementById('quick_amount').value = '';
+        document.getElementById('quick_desc').value = '';
+
+        onInputData();
+        renderLogs();
+    }
+
+    function renderLogs() {
+        const tbody = document.getElementById('log-table-body');
+        tbody.innerHTML = '';
+        if (historyLogs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #777;">ยังไม่มีรายการบันทึก</td></tr>';
+            return;
+        }
+
+        historyLogs.forEach((item, index) => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.day}</td>
+                <td>${item.typeName}</td>
+                <td style="text-align: left; padding-left: 8px;">${item.desc}</td>
+                <td style="text-align: right; padding-right: 8px; font-weight: bold;">${item.amount.toFixed(2)}</td>
+                <td class="no-print"><button class="btn" style="background:#c0392b; padding:2px 6px; font-size:11px;" onclick="deleteLog(${index})">❌</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function deleteLog(index) {
+        if(confirm('ต้องการลบรายการนี้ใช่หรือไม่?')) {
+            historyLogs.splice(index, 1);
+            onInputData();
+            renderLogs();
+        }
+    }
+
+    function onInputData() {
+        calculateTotals();
+        saveData();
+    }
+
+    function calculateTotals() {
+        let totalCash = 0, totalTransfer = 0, totalIncomeAll = 0;
+        let totalGeneral = 0, totalExcept = 0, totalBuy = 0, totalExpense = 0;
+
+        for (let i = 1; i <= totalRows; i++) {
+            let cashInput = document.getElementById(`cash_${i}`);
+            if (!cashInput) continue;
+
+            let cash = parseFloat(cashInput.value) || 0;
+            let transfer = parseFloat(document.getElementById(`transfer_${i}`).value) || 0;
+            let rowTotal = cash + transfer;
+            
+            document.getElementById(`row_total_${i}`).innerText = rowTotal > 0 ? rowTotal.toFixed(2) : '0.00';
+
+            let general = parseFloat(document.getElementById(`general_${i}`).value) || 0;
+            let except = parseFloat(document.getElementById(`except_${i}`).value) || 0;
+            let buy = parseFloat(document.getElementById(`buy_${i}`).value) || 0;
+            let expense = parseFloat(document.getElementById(`expense_${i}`).value) || 0;
+
+            totalCash += cash;
+            totalTransfer += transfer;
+            totalIncomeAll += rowTotal;
+            totalGeneral += general;
+            totalExcept += except;
+            totalBuy += buy;
+            totalExpense += expense;
+        }
+
+        document.getElementById('sum-cash').innerText = totalCash.toFixed(2);
+        document.getElementById('sum-transfer').innerText = totalTransfer.toFixed(2);
+        document.getElementById('sum-total-income').innerText = totalIncomeAll.toFixed(2);
+        document.getElementById('sum-general').innerText = totalGeneral.toFixed(2);
+        document.getElementById('sum-except').innerText = totalExcept.toFixed(2);
+        document.getElementById('sum-buy').innerText = totalBuy.toFixed(2);
+        document.getElementById('sum-expense').innerText = totalExpense.toFixed(2);
+    }
+
+    function saveData() {
+        const data = {
+            ownerName: document.getElementById('ownerName').value,
+            taxId: document.getElementById('taxId').value,
+            shopName: document.getElementById('shopName').value,
+            reportMonth: document.getElementById('reportMonth').value,
+            reportYear: document.getElementById('reportYear').value,
+            totalRows: totalRows,
+            historyLogs: historyLogs,
+            rows: []
+        };
+
+        for (let i = 1; i <= totalRows; i++) {
+            if (document.getElementById(`day_${i}`)) {
+                data.rows.push({
+                    day: document.getElementById(`day_${i}`).value,
+                    desc: document.getElementById(`desc_${i}`).value,
+                    cash: document.getElementById(`cash_${i}`).value,
+                    transfer: document.getElementById(`transfer_${i}`).value,
+                    general: document.getElementById(`general_${i}`).value,
+                    except: document.getElementById(`except_${i}`).value,
+                    buy: document.getElementById(`buy_${i}`).value,
+                    expense: document.getElementById(`expense_${i}`).value,
+                });
+            }
+        }
+
+        localStorage.setItem('tax_report_v14_data', JSON.stringify(data));
+    }
+
+    function loadData() {
+        const saved = localStorage.getItem('tax_report_v14_data');
+        if (!saved) {
+            renderTable(totalRows);
+            renderLogs();
+            return;
+        }
+        const data = JSON.parse(saved);
+
+        document.getElementById('ownerName').value = data.ownerName || '';
+        document.getElementById('taxId').value = data.taxId || '';
+        document.getElementById('shopName').value = data.shopName || '';
+        document.getElementById('reportMonth').value = data.reportMonth || 'มกราคม';
+        document.getElementById('reportYear').value = data.reportYear || '2569';
+
+        if (data.totalRows) totalRows = data.totalRows;
+        if (data.historyLogs) historyLogs = data.historyLogs;
+        
+        renderTable(totalRows);
+        renderLogs();
+
+        if (data.rows) {
+            data.rows.forEach((row, index) => {
+                let i = index + 1;
+                if(document.getElementById(`day_${i}`)) {
+                    document.getElementById(`day_${i}`).value = row.day || '';
+                    document.getElementById(`desc_${i}`).value = row.desc || '';
+                    document.getElementById(`cash_${i}`).value = row.cash || '';
+                    document.getElementById(`transfer_${i}`).value = row.transfer || '';
+                    document.getElementById(`general_${i}`).value = row.general || '';
+                    document.getElementById(`except_${i}`).value = row.except || '';
+                    document.getElementById(`buy_${i}`).value = row.buy || '';
+                    document.getElementById(`expense_${i}`).value = row.expense || '';
+                }
+            });
+        }
+        calculateTotals();
+    }
+
+    function clearData() {
+        if(confirm('คุณต้องการล้างข้อมูลทั้งหมดในตารางและประวัติใช่หรือไม่?')) {
+            localStorage.removeItem('tax_report_v14_data');
+            location.reload();
+        }
+    }
+
+    function updatePrintHeader() {
+        document.getElementById('p-owner').innerText = document.getElementById('ownerName').value || '-';
+        document.getElementById('p-taxid').innerText = document.getElementById('taxId').value || '-';
+        document.getElementById('p-shop').innerText = document.getElementById('shopName').value || '-';
+        
+        let month = document.getElementById('reportMonth').value;
+        let year = document.getElementById('reportYear').value;
+
+        let dayVal = document.getElementById('quick_day').value || '1';
+        document.getElementById('print-title-date').innerText = `รายงานเงินสดรับ - จ่าย ประจำวันที่ ${dayVal} ${month} พ.ศ. ${year}`;
+    }
+
+    function printReport() {
+        updatePrintHeader();
+        document.querySelector('.table-wrapper').style.display = 'block';
+        window.print();
+    }
+
+    function printLogReport() {
+        updatePrintHeader();
+        window.print();
+    }
+
+    window.onload = loadData;
+</script>
+
+</body>
+</html>
